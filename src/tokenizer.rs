@@ -2,6 +2,7 @@ use std::fmt;
 
 use crate::token::{FuncType, Token};
 
+#[derive(Debug)]
 pub enum TokenizerError {
     IllegalChar(char),
 }
@@ -25,7 +26,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn rest(&self) -> &'a str {
-        &self.text[self.curr..]
+        self.text.get(self.curr..).unwrap()
     }
 
     fn peek(&self) -> Option<char> {
@@ -40,9 +41,7 @@ impl<'a> Tokenizer<'a> {
 
     fn advance_n(&mut self, n: usize) {
         for _ in 0..n {
-            if let Some(c) = self.peek() {
-                self.curr += c.len_utf8();
-            }
+            self.advance();
         }
     }
 
