@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FuncType {
     Sin,
@@ -8,6 +10,20 @@ pub enum FuncType {
     Cot,
     Ln,
     Log,
+}
+impl fmt::Display for FuncType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Sin => "sin",
+            Self::Cos => "cos",
+            Self::Tan => "tan",
+            Self::Csc => "csc",
+            Self::Sec => "sec",
+            Self::Cot => "cot",
+            Self::Ln => "ln",
+            Self::Log => "log",
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,7 +47,7 @@ impl PartialEq<TokenType> for Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
     Eof,
     Num,

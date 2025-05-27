@@ -85,7 +85,7 @@ impl<'a> Parser<'a> {
 
     fn expect(&mut self, token_type: &TokenType) -> ParserResult<Token> {
         self.accept(token_type).ok_or(ParserError::Expected {
-            expected: token_type.clone(),
+            expected: *token_type,
             got: self.peek().unwrap().into(),
         })
     }
@@ -193,7 +193,7 @@ impl<'a> Parser<'a> {
                 if self.accept_token(&Token::Var('d')) {
                     if let Some(Token::Var(var)) = self.accept(&TokenType::Var) {
                         self.expect(&TokenType::LParen)?;
-                        let derivative = Box::new(self.parse_expr()?);
+                        let derivative = Box::new(self.parse_derivative()?);
                         self.expect(&TokenType::RParen)?;
                         return Ok(Node::Derivative { derivative, var });
                     } else {
