@@ -54,7 +54,7 @@ impl Interpreter {
             Node::Var(var) => self
                 .table
                 .get(var)
-                .or(ext.map(|t| t.get(var).unwrap()))
+                .or_else(|| ext.and_then(|t| t.get(var)))
                 .map_or_else(|| node.clone(), |val| Node::Num(*val)),
             Node::Func { func, arg } => self.visit_func(func, arg, ext)?,
             Node::Exponent { base, exponent } => self.visit_exponent(base, exponent, ext)?,
@@ -63,10 +63,7 @@ impl Interpreter {
             Node::Derivative { derivative, var } => {
                 self.visit(&self.differentiate(derivative, *var, ext)?, ext)?
             }
-            Node::Equation { lhs, rhs } => Node::Equation {
-                lhs: Box::new(self.visit(lhs, ext)?),
-                rhs: Box::new(self.visit(rhs, ext)?),
-            },
+            Node::Equation { .. } => Node::Num(self.solve_equation(node, 0f64)?),
         })
     }
 }

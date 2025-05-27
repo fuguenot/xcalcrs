@@ -18,6 +18,36 @@ impl Interpreter {
         }
     }
 
+    pub fn solve_equation(&self, eq: &Node, guess: f64) -> InterpreterResult<f64> {
+        let f = self.move_equation(eq)?;
+        let derivative = self.visit(&self.differentiate(&f, 'x', None)?, None)?;
+        let mut solution = guess;
+        let mut error = None;
+        let mut step;
+        let mut map = HashMap::new();
+        while error.is_none_or(|e| e > 0.0001) {
+            map.insert('x', solution);
+            step = self.visit(
+                &Node::Factors(vec![
+                    (TokenType::Mul, Node::Num(-1f64)),
+                    (TokenType::Mul, self.visit(&f, Some(&map))?),
+                    (TokenType::Div, self.visit(&derivative, Some(&map))?),
+                ]),
+                Some(&map),
+            )?;
+            if let Node::Num(h) = step {
+                solution += h;
+                error = Some(h);
+            } else {
+                return Err(InterpreterError::SolveError(String::from(
+                    "Not substituted",
+                )));
+            }
+        }
+
+        Ok(solution)
+    }
+
     pub fn solve_system(
         &self,
         eq1: &Node,
@@ -89,14 +119,15 @@ impl Interpreter {
             ),
         );
         let mut solution = guess;
-        let mut step: Option<(f64, f64)> = None;
-        let mut try_step: (Node, Node);
+        let mut error = None;
+        let mut h;
         let mut map = HashMap::new();
-        while step.is_none() || step.unwrap().0.powi(2) + step.unwrap().1.powi(2) > 0.00000001 {
+        let mut val;
+        while error.is_none_or(|e| e > 0.00000001) {
             map.insert('x', solution.0);
             map.insert('y', solution.1);
-            let val: (Node, Node) = (self.visit(&f1, Some(&map))?, self.visit(&f2, Some(&map))?);
-            try_step = (
+            val = (self.visit(&f1, Some(&map))?, self.visit(&f2, Some(&map))?);
+            h = (
                 self.visit(
                     &Node::Terms(vec![
                         (
@@ -140,9 +171,10 @@ impl Interpreter {
                     Some(&map),
                 )?,
             );
-            if let Node::Num(x) = try_step.0 {
-                if let Node::Num(y) = try_step.1 {
-                    step = Some((x, y));
+            if let Node::Num(hx) = h.0 {
+                if let Node::Num(hy) = h.1 {
+                    error = Some(hx.powi(2) + hy.powi(2));
+                    solution = (solution.0 + hx, solution.1 + hy);
                 } else {
                     return Err(InterpreterError::SolveError(String::from(
                         "Not substituted",
@@ -153,7 +185,6 @@ impl Interpreter {
                     "Not substituted",
                 )));
             }
-            solution = (solution.0 + step.unwrap().0, solution.1 + step.unwrap().1);
         }
         Ok(solution)
     }
